@@ -1,18 +1,16 @@
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView
+from django.views.generic import ListView, CreateView, UpdateView, DetailView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from .models import Sale, SaleDetail
-from users.mixins import AdminRequiredMixin
 from products.models import Product
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from .forms import SaleEditForm, SaleDetailEditForm, SaleForm, SaleDetailFormSet
-import json
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+import json
 
 class SaleListView(LoginRequiredMixin, ListView):
     model = Sale
@@ -169,9 +167,6 @@ class SaleUpdateStatusView(LoginRequiredMixin, UpdateView):
         
         messages.success(self.request, f'El estado de la venta ha sido actualizado a {new_status}.')
         return redirect('sales:detail', pk=sale.pk)
-
-
-
 
 class SaleCancelConfirmationView(LoginRequiredMixin, TemplateView):
     template_name = 'sales/cancel_confirmation.html'

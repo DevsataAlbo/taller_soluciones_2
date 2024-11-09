@@ -75,19 +75,6 @@ class Sale(models.Model):
         if self.status == 'COMPLETED' and self.total == 0:
             raise ValidationError("No se puede completar una venta sin productos")
 
-    # def validate_stock(self):
-    #     """Valida que haya stock suficiente para todos los productos"""
-    #     for detail in self.saledetail_set.all():
-    #         if detail.quantity > detail.product.stock:
-    #             raise ValidationError(f"Stock insuficiente para {detail.product.name}")
-
-    # def update_stock(self):
-    #     """Actualiza el stock de los productos cuando la venta se completa"""
-    #     if self.status == 'COMPLETED':
-    #         for detail in self.saledetail_set.all():
-    #             detail.product.stock -= detail.quantity
-    #             detail.product.save()
-
     def save(self, *args, **kwargs):
         if not self.number:
             self.number = self.generate_sale_number()
@@ -97,8 +84,6 @@ class Sale(models.Model):
     def mark_as_modified(self):
         self.is_modified = True
         self.save()
-
-
 
 class SaleDetail(models.Model):
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Venta")
@@ -131,7 +116,7 @@ class SaleDetail(models.Model):
         self.subtotal = self.quantity * self.unit_price
         super().save(*args, **kwargs)
 
-        # Asegúrate de que la venta ya exista en la base de datos antes de actualizar el total
+        # Revisar que la venta ya exista en la base de datos antes de actualizar el total
         if self.sale.pk:
             self.sale.total = self.sale.calculate_total()
             self.sale.save()

@@ -13,7 +13,7 @@ class SaleAdmin(admin.ModelAdmin):
     list_filter = ['status', 'payment_method', 'date']
     search_fields = ['number', 'user__username']
     readonly_fields = ['number', 'date', 'total', 'user', 'is_stock_deducted']
-    inlines = [SaleDetailInline]  # Corrige esta línea
+    inlines = [SaleDetailInline]  
 
 @admin.register(SaleDetail)
 class SaleDetailAdmin(admin.ModelAdmin):

@@ -11,12 +11,12 @@ def search_products(request):
     if len(term) < 2:
         return JsonResponse([], safe=False)
 
-    # Usando contains en lugar de LIKE
+   
     products = Product.objects.filter(
         Q(name__icontains=term) | Q(brand__icontains=term),
         is_active=True,
         stock__gt=0
-    ).order_by('name')  # Ordenamos por nombre
+    ).order_by('name')  # Ordenados por nombre
 
     # Debug - Imprimir todos los productos activos
     print("\nTodos los productos activos:")
@@ -24,7 +24,7 @@ def search_products(request):
     for p in all_products:
         print(f"- {p.name} (Marca: {p.brand}, Activo: {p.is_active}, Stock: {p.stock})")
 
-    # Convertimos a lista y preparamos para JSON
+    # Convertimos a lista y preparar para JSON
     product_list = []
     for product in products:
         product_list.append({

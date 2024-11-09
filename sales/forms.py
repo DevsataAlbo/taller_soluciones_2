@@ -24,6 +24,6 @@ SaleDetailFormSet = inlineformset_factory(
     SaleDetail,
     form=SaleDetailEditForm,
     fields=['product', 'quantity'],  
-    extra=3,  # Puedes ajustar esto según la cantidad de productos que deseas permitir añadir
-    can_delete=True  # Permite que los usuarios eliminen productos de la venta
+    extra=3,  
+    can_delete=True  
 )
