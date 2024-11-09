@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if form.instance.pk %}Editar{% else %}Crear{% endif %} Producto - Sistema de Ventas
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-3xl mx-auto">
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <h2 class="text-2xl font-semibold mb-6">
+                {% if form.instance.pk %}
+                    Editar Producto: {{ form.instance.name }}
+                {% else %}
+                    Crear Nuevo Producto
+                {% endif %}
+            </h2>
+
+            <form method="post" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <!-- Datos Básicos -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">Nombre del Producto</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ form.name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Marca</label>
+                        {{ form.brand }}
+                        {% if form.brand.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ form.brand.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Categoría</label>
+                        {{ form.category }}
+                        {% if form.category.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ form.category.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Precios y Cálculos -->
+                <div class="border-t pt-4 mt-4">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Precios</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Precio de compra -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Precio de Compra</label>
+                            {{ form.purchase_price }}
+                            {% if form.purchase_price.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.purchase_price.errors.0 }}</p>
+                            {% endif %}
+                            <div class="mt-2">
+                                <label class="inline-flex items-center">
+                                    {{ form.is_purchase_with_tax }}
+                                    <span class="ml-2 text-sm text-gray-600">Incluye IVA</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Precio de Venta -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Precio de Venta</label>
+                            {{ form.sale_price }}
+                            {% if form.sale_price.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.sale_price.errors.0 }}</p>
+                            {% endif %}
+                            <div class="mt-2">
+                                <label class="inline-flex items-center">
+                                    {{ form.is_sale_with_tax }}
+                                    <span class="ml-2 text-sm text-gray-600">Incluye IVA</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Rentabilidad calculada -->
+                        <div class="col-span-2 bg-gray-50 p-4 rounded">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <span class="text-sm text-gray-600">Precio de Compra (sin IVA):</span>
+                                    <span class="font-medium ml-2">$ <span id="netPurchasePrice">0</span></span>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-gray-600">Precio de Venta (sin IVA):</span>
+                                    <span class="font-medium ml-2">$ <span id="netSalePrice">0</span></span>
+                                </div>
+                                <div class="col-span-2">
+                                    <span class="text-sm text-gray-600">Rentabilidad:</span>
+                                    <span class="font-medium ml-2"><span id="profitPercentage">0</span>%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos Adicionales -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Stock</label>
+                        {{ form.stock }}
+                        {% if form.stock.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ form.stock.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">Descripción</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ form.description.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">Imagen del Producto</label>
+                        {{ form.image }}
+                        {% if form.image.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ form.image.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="flex justify-end space-x-4 mt-6">
+                    <a href="{% url 'products:list' %}" 
+                       class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">
+                        Cancelar
+                    </a>
+                    <button type="submit" 
+                            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                        {% if form.instance.pk %}Actualizar{% else %}Crear{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const purchasePriceInput = document.getElementById('id_purchase_price');
+    const isPurchaseTaxInput = document.getElementById('id_is_purchase_with_tax');
+    const salePriceInput = document.getElementById('id_sale_price');
+    const isSaleTaxInput = document.getElementById('id_is_sale_with_tax');
+
+    function calculatePrices() {
+        // Obtener valores
+        const purchasePrice = parseFloat(purchasePriceInput.value) || 0;
+        const isPurchaseTax = isPurchaseTaxInput.checked;
+        const salePrice = parseFloat(salePriceInput.value) || 0;
+        const isSaleTax = isSaleTaxInput.checked;
+
+        // Calcular precios netos
+        let netPurchasePrice = isPurchaseTax ? Math.round(purchasePrice / 1.19) : purchasePrice;
+        let netSalePrice = isSaleTax ? Math.round(salePrice / 1.19) : salePrice;
+
+        // Calcular rentabilidad
+        let profitPercentage = 0;
+        if (netPurchasePrice > 0 && netSalePrice > 0) {
+            profitPercentage = Math.round(((netSalePrice - netPurchasePrice) / netPurchasePrice) * 100);
+        }
+
+        // Actualizar UI
+        document.getElementById('netPurchasePrice').textContent = netPurchasePrice.toLocaleString();
+        document.getElementById('netSalePrice').textContent = netSalePrice.toLocaleString();
+        document.getElementById('profitPercentage').textContent = profitPercentage;
+    }
+
+    // Event listeners
+    purchasePriceInput.addEventListener('input', calculatePrices);
+    isPurchaseTaxInput.addEventListener('change', calculatePrices);
+    salePriceInput.addEventListener('input', calculatePrices);
+    isSaleTaxInput.addEventListener('change', calculatePrices);
+
+    // Calcular inicialmente
+    calculatePrices();
+});
+</script>
+{% endblock %}

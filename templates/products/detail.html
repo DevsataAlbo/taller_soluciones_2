@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ product.name }} - Detalle de Producto{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <!-- Encabezado -->
+            <div class="border-b px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <h1 class="text-2xl font-semibold text-gray-900">{{ product.name }}</h1>
+                    {% if request.user.role == 'admin' %}
+                    <div class="flex space-x-2">
+                        <a href="{% url 'products:update' product.pk %}" 
+                           class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                            Editar
+                        </a>
+                        <a href="{% url 'products:delete' product.pk %}" 
+                           class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
+                            Eliminar
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="p-6">
+                <!-- Imagen y Detalles Básicos -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Imagen -->
+                    <div class="flex justify-center">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" 
+                                 class="max-h-64 object-contain rounded">
+                        {% else %}
+                            <div class="h-64 w-64 bg-gray-200 flex items-center justify-center rounded">
+                                <span class="text-gray-500">Sin imagen</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Información Básica -->
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Marca</h3>
+                            <p class="mt-1 text-lg text-gray-900">{{ product.brand }}</p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Categoría</h3>
+                            <p class="mt-1 text-lg text-gray-900">{{ product.category.name }}</p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Stock</h3>
+                            <p class="mt-1">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if product.stock > 10 %}
+                                        bg-green-100 text-green-800
+                                    {% elif product.stock > 0 %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% else %}
+                                        bg-red-100 text-red-800
+                                    {% endif %}">
+                                    {{ product.stock }} unidades
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de Precios -->
+                <div class="mt-8 border-t pt-6">
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Información de Precios</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Precios de Compra -->
+                        <div class="bg-gray-50 p-4 rounded">
+                            <h3 class="text-sm font-medium text-gray-500">Precio de Compra</h3>
+                            <p class="mt-1 text-lg font-medium text-gray-900">
+                                $ {{ product.purchase_price|intcomma }}
+                                {% if product.is_purchase_with_tax %}
+                                    <span class="text-sm text-gray-500">(IVA incluido)</span>
+                                {% endif %}
+                            </p>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Neto: $ {{ product.get_purchase_price_without_tax|intcomma }}
+                            </p>
+                        </div>
+
+                        <!-- Precios de Venta -->
+                        <div class="bg-gray-50 p-4 rounded">
+                            <h3 class="text-sm font-medium text-gray-500">Precio de Venta</h3>
+                            <p class="mt-1 text-lg font-medium text-gray-900">
+                                $ {{ product.sale_price|intcomma }}
+                                {% if product.is_sale_with_tax %}
+                                    <span class="text-sm text-gray-500">(IVA incluido)</span>
+                                {% endif %}
+                            </p>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Neto: $ {{ product.get_sale_price_without_tax|intcomma }}
+                            </p>
+                        </div>
+
+                        <!-- Rentabilidad -->
+                        <div class="bg-gray-50 p-4 rounded col-span-2">
+                            <h3 class="text-sm font-medium text-gray-500">Rentabilidad</h3>
+                            <p class="mt-1">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                    {% if product.calculate_profit_percentage >= 30 %}
+                                        bg-green-100 text-green-800
+                                    {% elif product.calculate_profit_percentage >= 15 %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% else %}
+                                        bg-red-100 text-red-800
+                                    {% endif %}">
+                                    {{ product.calculate_profit_percentage }}%
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Descripción -->
+                {% if product.description %}
+                <div class="mt-8 border-t pt-6">
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Descripción</h2>
+                    <p class="text-gray-700 whitespace-pre-line">{{ product.description }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Fechas -->
+                <div class="mt-8 border-t pt-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">
+                        <div>
+                            <span class="font-medium">Fecha de creación:</span>
+                            {{ product.created|date:"d/m/Y H:i" }}
+                        </div>
+                        <div>
+                            <span class="font-medium">Última actualización:</span>
+                            {{ product.updated|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón Volver -->
+        <div class="mt-6">
+            <a href="{% url 'products:list' %}" 
+               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                Volver a la lista
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

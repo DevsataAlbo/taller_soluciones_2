@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Sistema de Ventas{% endblock %}
+
+{% block header_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Tarjeta de Ventas -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500">Ventas Totales</p>
+                <h3 class="text-2xl font-bold">S/ 15,350</h3>
+            </div>
+            <div class="bg-blue-100 p-3 rounded-full">
+                <i class="fas fa-shopping-cart text-blue-500"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta de Productos -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500">Total Productos</p>
+                <h3 class="text-2xl font-bold">245</h3>
+            </div>
+            <div class="bg-green-100 p-3 rounded-full">
+                <i class="fas fa-box text-green-500"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Más tarjetas aca -->
+</div>
+{% endblock %}

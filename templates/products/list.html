@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Productos - Sistema de Ventas{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-semibold">Productos</h1>
+        {% if request.user.role == 'admin' %}
+        <a href="{% url 'products:create' %}" 
+           class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+            Nuevo Producto
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <input type="text" 
+                       placeholder="Buscar producto..." 
+                       class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+            </div>
+            <div>
+                <select class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">Todas las categorías</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <select class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">Todas las marcas</option>
+                    {% for brand in brands %}
+                        <option value="{{ brand.id }}">{{ brand.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Productos -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Imagen
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Producto
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Marca
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Categoría
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Stock
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Precio Compra
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Precio Venta
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Rentabilidad
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Acciones
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for product in products %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" 
+                                 class="h-10 w-10 rounded-full object-cover">
+                        {% else %}
+                            <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                <span class="text-gray-500 text-xs">N/A</span>
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <a href="{% url 'products:detail' product.pk %}" 
+                           class="text-blue-600 hover:text-blue-900">
+                            {{ product.name }}
+                        </a>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {{ product.brand }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {{ product.category.name }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if product.stock > 10 %}
+                                bg-green-100 text-green-800
+                            {% elif product.stock > 0 %}
+                                bg-yellow-100 text-yellow-800
+                            {% else %}
+                                bg-red-100 text-red-800
+                            {% endif %}">
+                            {{ product.stock }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span class="font-medium">$ {{ product.purchase_price|intcomma }}</span>
+                        {% if product.is_purchase_with_tax %}
+                            <span class="text-xs text-gray-400">(IVA inc.)</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span class="font-medium">$ {{ product.sale_price|intcomma }}</span>
+                        {% if product.is_sale_with_tax %}
+                            <span class="text-xs text-gray-400">(IVA inc.)</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                            {% if product.calculate_profit_percentage >= 30 %}
+                                bg-green-100 text-green-800
+                            {% elif product.calculate_profit_percentage >= 15 %}
+                                bg-yellow-100 text-yellow-800
+                            {% else %}
+                                bg-red-100 text-red-800
+                            {% endif %}">
+                            {{ product.calculate_profit_percentage }}%
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        {% if request.user.role == 'admin' %}
+                            <a href="{% url 'products:update' product.pk %}" 
+                               class="text-blue-600 hover:text-blue-900 mr-3">Editar</a>
+                            <a href="{% url 'products:delete' product.pk %}"
+                               class="text-red-600 hover:text-red-900">Eliminar</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="px-6 py-4 text-center text-gray-500">
+                        No hay productos disponibles
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
