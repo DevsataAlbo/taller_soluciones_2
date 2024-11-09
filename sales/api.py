@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from django.db.models import Q
 from products.models import Product
 import json
+from django.views.decorators.http import require_http_methods
 
 def search_products(request):
     term = request.GET.get('term', '').strip()
@@ -145,3 +146,13 @@ def remove_from_cart(request, product_id):
         'cart': cart,
         'total': sum(item['price'] * item['quantity'] for item in cart)
     })
+
+@require_http_methods(["POST"])
+def init_cart(request):
+    try:
+        data = json.loads(request.body)
+        cart = data.get('cart', [])
+        request.session['cart'] = cart
+        return JsonResponse({'success': True, 'cart': cart})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)

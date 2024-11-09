@@ -121,6 +121,7 @@
                 <form method="post" action="{% url 'sales:update_status' sale.pk %}" class="inline">
                     {% csrf_token %}
                     <input type="hidden" name="status" value="COMPLETED">
+                    <input type="hidden" name="payment_method" value="{{ sale.payment_method }}">
                     <button type="submit" 
                             class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg ml-2">
                         Marcar como Completada
@@ -135,6 +136,12 @@
 
                 </form>
             </div>
+            {% endif %}
+            {% if sale.status != 'CANCELLED' %}
+                <a href="{% url 'sales:edit' sale.pk %}" 
+                class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg ml-2">
+                    Editar Venta
+                </a>
             {% endif %}
         </div>
     </div>

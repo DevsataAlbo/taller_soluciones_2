@@ -1,6 +1,6 @@
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from .models import Sale, SaleDetail
 from users.mixins import AdminRequiredMixin
@@ -9,6 +9,10 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.db import transaction
 from django.core.exceptions import ValidationError
+from .forms import SaleEditForm, SaleDetailEditForm, SaleForm, SaleDetailFormSet
+import json
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 class SaleListView(LoginRequiredMixin, ListView):
     model = Sale
@@ -128,40 +132,46 @@ class SaleDetailView(LoginRequiredMixin, DetailView):
 
 class SaleUpdateStatusView(LoginRequiredMixin, UpdateView):
     model = Sale
-    fields = ['status', 'payment_method']
+    fields = ['status']  
+    template_name = 'sales/detail.html' 
     http_method_names = ['post']
 
     @transaction.atomic
     def form_valid(self, form):
+        print("\n=== DEBUG UPDATE STATUS ===")
         sale = form.save(commit=False)
-        
         old_status = Sale.objects.get(pk=sale.pk).status
         new_status = form.cleaned_data['status']
+        
+        print(f"Venta #{sale.pk}")
+        print(f"Estado anterior: {old_status}")
+        print(f"Nuevo estado: {new_status}")
 
-        # Si el estado cambia a "CANCELLED", restituir el stock
-        if new_status == "CANCELLED" and sale.is_stock_deducted:
-            for detail in sale.saledetail_set.all():
-                product = detail.product
-                product.stock += detail.quantity
-                product.save()
-            sale.is_stock_deducted = False  # Marcar como no descontado
-            messages.success(self.request, f'Se ha anulado la venta y el stock ha sido restituido.')
-
-        # Si el estado cambia de "PENDING" a "COMPLETED", descontar stock solo si no se ha descontado
-        elif old_status == 'PENDING' and new_status == 'COMPLETED' and not sale.is_stock_deducted:
+        # Cambiar de PENDING a COMPLETED
+        if old_status == 'PENDING' and new_status == 'COMPLETED' and not sale.is_stock_deducted:
             for detail in sale.saledetail_set.all():
                 product = detail.product
                 if product.stock < detail.quantity:
                     messages.error(self.request, f"No hay suficiente stock para {product.name}")
                     return redirect('sales:detail', pk=sale.pk)
-                
+
                 product.stock -= detail.quantity
                 product.save()
-            sale.is_stock_deducted = True  # Marcar como descontado
-            messages.success(self.request, f'Venta actualizada a {sale.get_status_display()}')
+            sale.is_stock_deducted = True
+            print("Stock descontado")
 
         sale.save()
+        print(f"Venta guardada. Estado final: {sale.status}")
+        
+        # Verificar que se guardó correctamente
+        saved_sale = Sale.objects.get(pk=sale.pk)
+        print(f"Estado en BD: {saved_sale.status}")
+        
+        messages.success(self.request, f'El estado de la venta ha sido actualizado a {new_status}.')
         return redirect('sales:detail', pk=sale.pk)
+
+
+
 
 class SaleCancelConfirmationView(LoginRequiredMixin, TemplateView):
     template_name = 'sales/cancel_confirmation.html'
@@ -194,3 +204,97 @@ class SaleCancelConfirmationView(LoginRequiredMixin, TemplateView):
         
         messages.success(request, "La venta ha sido cancelada y el stock ha sido restaurado.")
         return redirect('sales:detail', pk=sale.pk)
+    
+@method_decorator(csrf_exempt, name='dispatch')
+class SaleEditView(LoginRequiredMixin, UpdateView):
+    model = Sale
+    template_name = 'sales/edit.html'
+    fields = ['payment_method', 'status']
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        
+        # Verificar si es una petición AJAX/JSON
+        if request.headers.get('Content-Type') == 'application/json':
+            try:
+                data = json.loads(request.body)
+                cart = data.get('cart', [])
+                payment_method = data.get('payment_method')
+                status = data.get('status')
+
+                if not cart:
+                    return JsonResponse({'error': "No hay productos en la venta"}, status=400)
+
+                # Restaurar stock anterior si ya fue descontado
+                if self.object.is_stock_deducted:
+                    for detail in self.object.saledetail_set.all():
+                        product = detail.product
+                        product.stock += detail.quantity
+                        product.save()
+
+                # Eliminar detalles anteriores
+                self.object.saledetail_set.all().delete()
+
+                # Actualizar la venta
+                self.object.payment_method = payment_method
+                self.object.status = status
+                self.object.total = sum(item['price'] * item['quantity'] for item in cart)
+                self.object.is_modified = True
+                self.object.save()
+
+                # Crear nuevos detalles y actualizar stock
+                for item in cart:
+                    product = Product.objects.get(id=item['product_id'])
+                    
+                    # Verificar stock disponible
+                    if product.stock < item['quantity']:
+                        raise ValidationError(f'Stock insuficiente para {product.name}')
+
+                    # Descontar stock
+                    product.stock -= item['quantity']
+                    product.save()
+
+                    # Crear detalle
+                    SaleDetail.objects.create(
+                        sale=self.object,
+                        product=product,
+                        quantity=item['quantity'],
+                        unit_price=item['price'],
+                        purchase_price=product.purchase_price,
+                        is_tax_included=product.is_sale_with_tax,
+                        subtotal=item['price'] * item['quantity']
+                    )
+
+                return JsonResponse({
+                    'success': True,
+                    'redirect_url': reverse('sales:detail', kwargs={'pk': self.object.pk})
+                })
+
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Datos inválidos'}, status=400)
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=400)
+        
+        # Si no es JSON, procesar como formulario normal
+        return super().post(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Convertir los detalles de la venta a un formato serializable
+        initial_cart = []
+        for detail in self.object.saledetail_set.all():
+            initial_cart.append({
+                'product_id': detail.product.id,
+                'name': detail.product.name,
+                'quantity': detail.quantity,
+                'price': detail.unit_price,
+            })
+
+        context.update({
+            'products': Product.objects.filter(is_active=True),
+            'payment_methods': Sale.PAYMENT_CHOICES,
+            'sale_status': Sale.SALE_STATUS,
+            'initial_cart': initial_cart
+        })
+        return context
