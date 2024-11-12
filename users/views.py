@@ -8,6 +8,8 @@ from .models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib import messages
 from .mixins import AdminRequiredMixin
+from django.views.generic.detail import DetailView
+from .models import User
 
 class LoginView(AuthLoginView):
     template_name = 'users/login.html'
@@ -53,6 +55,7 @@ class UserCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView):
     model = User
     template_name = 'users/form.html'
     fields = ['username', 'email', 'password', 'first_name', 'last_name', 'role']
+    success_url = reverse_lazy('users:list')
     
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -67,6 +70,7 @@ class UserUpdateView(LoginRequiredMixin, AdminRequiredMixin, UpdateView):
     model = User
     template_name = 'users/form.html'
     fields = ['username', 'email', 'first_name', 'last_name', 'role', 'is_active']
+    success_url = reverse_lazy('users:list')
     
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -81,3 +85,5 @@ class UserDeleteView(LoginRequiredMixin, AdminRequiredMixin, DeleteView):
     model = User
     template_name = 'users/delete.html'
     success_url = reverse_lazy('users:list')
+
+
