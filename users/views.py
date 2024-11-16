@@ -64,7 +64,15 @@ class UserCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView):
             form.fields[field].widget.attrs.update({
                 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500'
             })
+        # Cambiar el widget de password a PasswordInput
+        form.fields['password'].widget.input_type = 'password'
         return form
+    
+    def form_valid(self, form):
+        # Hashear la contraseña antes de guardar
+        form.instance.password = make_password(form.cleaned_data['password'])
+        messages.success(self.request, 'Usuario creado exitosamente.')
+        return super().form_valid(form)
 
 class UserUpdateView(LoginRequiredMixin, AdminRequiredMixin, UpdateView):
     model = User
@@ -74,12 +82,15 @@ class UserUpdateView(LoginRequiredMixin, AdminRequiredMixin, UpdateView):
     
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        # Añadir clases a los campos
         for field in form.fields:
             form.fields[field].widget.attrs.update({
                 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500'
             })
         return form
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Usuario actualizado exitosamente.')
+        return super().form_valid(form)
 
 class UserDeleteView(LoginRequiredMixin, AdminRequiredMixin, DeleteView):
     model = User

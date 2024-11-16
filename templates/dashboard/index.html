@@ -1,37 +1,181 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}Dashboard - Sistema de Ventas{% endblock %}
-
 {% block header_title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-    <!-- Tarjeta de Ventas -->
+<!-- Resumen de Ventas -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <!-- Ventas del Día -->
     <div class="bg-white p-6 rounded-lg shadow-md">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-gray-500">Ventas Totales</p>
-                <h3 class="text-2xl font-bold">S/ 15,350</h3>
+                <p class="text-gray-500 text-sm">Ventas del Día</p>
+                <h3 class="text-2xl font-bold">$ {{ sales_summary.day|intcomma }}</h3>
             </div>
             <div class="bg-blue-100 p-3 rounded-full">
-                <i class="fas fa-shopping-cart text-blue-500"></i>
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
             </div>
         </div>
     </div>
 
-    <!-- Tarjeta de Productos -->
+    <!-- Ventas de la Semana -->
     <div class="bg-white p-6 rounded-lg shadow-md">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-gray-500">Total Productos</p>
-                <h3 class="text-2xl font-bold">245</h3>
+                <p class="text-gray-500 text-sm">Ventas de la Semana</p>
+                <h3 class="text-2xl font-bold">$ {{ sales_summary.week|intcomma }}</h3>
             </div>
             <div class="bg-green-100 p-3 rounded-full">
-                <i class="fas fa-box text-green-500"></i>
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
             </div>
         </div>
     </div>
 
-    <!-- Más tarjetas aca -->
+    <!-- Ventas del Mes -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm">Ventas del Mes</p>
+                <h3 class="text-2xl font-bold">$ {{ sales_summary.month|intcomma }}</h3>
+            </div>
+            <div class="bg-purple-100 p-3 rounded-full">
+                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ventas del Año -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm">Ventas del Año</p>
+                <h3 class="text-2xl font-bold">$ {{ sales_summary.year|intcomma }}</h3>
+            </div>
+            <div class="bg-yellow-100 p-3 rounded-full">
+                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Productos Más Vendidos -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold mb-4">Productos Más Vendidos</h2>
+        <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm text-gray-500">Hoy</p>
+                    <p class="font-medium">{{ top_products.day.product__name|default:"Sin ventas" }}</p>
+                    {% if top_products.day %}
+                        <p class="text-sm text-gray-500">{{ top_products.day.total_quantity }} unidades</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Esta Semana</p>
+                    <p class="font-medium">{{ top_products.week.product__name|default:"Sin ventas" }}</p>
+                    {% if top_products.week %}
+                        <p class="text-sm text-gray-500">{{ top_products.week.total_quantity }} unidades</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm text-gray-500">Este Mes</p>
+                    <p class="font-medium">{{ top_products.month.product__name|default:"Sin ventas" }}</p>
+                    {% if top_products.month %}
+                        <p class="text-sm text-gray-500">{{ top_products.month.total_quantity }} unidades</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Este Año</p>
+                    <p class="font-medium">{{ top_products.year.product__name|default:"Sin ventas" }}</p>
+                    {% if top_products.year %}
+                        <p class="text-sm text-gray-500">{{ top_products.year.total_quantity }} unidades</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Ventas -->
+    <div class="bg-white p-6 rounded-lg shadow-md h-96">
+        <h2 class="text-lg font-semibold mb-4">Tendencia de Ventas</h2>
+        <canvas id="salesChart" class="w-full h-full"></canvas>
+    </div>
+    
+</div>
+
+<!-- Top Productos -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Top 5 Productos Rentables -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold mb-4">Top 5 Productos más Rentables</h2>
+        <div class="space-y-4">
+            {% for product in top_profitable_products %}
+            <div class="flex items-center justify-between">
+                <span class="font-medium">{{ product.product__name }}</span>
+                <span class="text-green-600">$ {{ product.total_profit|intcomma }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Productos con Stock Bajo -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold mb-4">Productos con Stock Bajo</h2>
+        <div class="space-y-4">
+            {% for product in low_stock_products %}
+            <div class="flex items-center justify-between">
+                <span class="font-medium">{{ product.name }}</span>
+                <span class="{% if product.stock < 10 %}text-red-600{% else %}text-yellow-600{% endif %}">
+                    {{ product.stock }} unidades
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Configuración del gráfico de ventas
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
+            datasets: [{
+                label: 'Ventas',
+                data: [12000, 19000, 15000, 25000, 22000, 30000, 28000],
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,  // Cambiar a true para mantener la proporción.
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+</script>
 {% endblock %}
